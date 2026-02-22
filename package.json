@@ -1,0 +1,18 @@
+{
+  "name": "ai-autopilot",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "ai-autopilot": "bun ./index.ts",
+    "auto-pr": "bun ./index.ts",
+    "check": "bun ./check-integrity.ts",
+    "build": "bash ./build-standalone.sh"
+  },
+  "dependencies": {
+    "execa": "^9.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "agentRunner": "opencode",
+  "models": {
+    "claude": {
+      "default": "sonnet",
+      "steps": {
+        "research": "sonnet",
+        "plan": "opus",
+        "planAnnotations": "opus",
+        "planImplementation": "opus",
+        "implement": "sonnet",
+        "prDescription": "opus",
+        "review": "opus",
+        "refresh": "haiku",
+        "reviewRound": "opus"
+      }
+    },
+    "opencode": {
+      "default": "openai/gpt-5.1-codex",
+      "steps": {
+        "research": "openai/gpt-5.1-codex",
+        "plan": "openai/gpt-5.3-codex",
+        "planAnnotations": "opencode/glm-5",
+        "planImplementation": "openai/gpt-5.3-codex",
+        "implement": "openai/gpt-5.3-codex-spark",
+        "prDescription": "openai/gpt-5.3-codex",
+        "review": "openai/gpt-5.3-codex",
+        "refresh": "opencode/kimi-k2.5",
+        "reviewRound": "openai/gpt-5.3-codex"
+      }
+    }
+  },
+  "hooks": {
+    "onNeedInput": "osascript -e 'display notification \"ai-autopilot needs your input\" with title \"ai-autopilot\" sound name \"Glass\"'"
+  },
+  "askWorktreeStart": true,
+  "prMode": "ask",
+  "triggerLabel": "ai-autopilot",
+  "sourceCommands": {
+    "github": "",
+    "trello": "sources/trello-source.ts",
+    "slack": "sources/slack-source.ts"
+  },
+  "repos": [],
+  "profiles": {
+    "work": {
+      "agentRunner": "claude",
+      "models": {
+        "claude": {
+          "default": "sonnet",
+          "steps": {
+            "research": "sonnet"
+          }
+        }
+      },
+      "promptDir": "prompts/work"
+    }
+  },
+  "maxImplementIterations": 10,
+  "loopIntervalMinutes": 30,
+  "loopRetryEnabled": false,
+  "retryDelayMs": 30000,
+  "maxRetryDelayMs": 300000
+}
