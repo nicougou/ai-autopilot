@@ -10,7 +10,7 @@ You give it a source (issue, markdown task, prompt, Trello URL, Slack URL), and 
 
 Pipeline:
 
-`research -> plan -> plan-annotations (optional) -> plan-implementation -> implement -> review -> pr-description -> create-pr (optional) -> remove-label (GitHub issue only)`
+`research -> plan -> plan-annotations (optional) -> plan-review-loop -> plan-implementation -> implement -> review -> pr-description -> create-pr (optional) -> remove-label (GitHub issue only)`
 
 Core capabilities:
 
@@ -20,12 +20,16 @@ Core capabilities:
 - Supports lifecycle hooks (`beforeStep`, `afterStep`, `onNeedInput`) for notifications/automation.
 - Supports profiles (`--profile`) and one-off overrides (`--runner`, `--model`, `--pr-creation`, `--until`).
 - Supports resume by source or exact task id (`--resume --id ...`) which is helpful for UUID runs.
+- Auto-detects and reuses the original worktree on `--resume --id` when task artifacts are in a worktree.
+- Supports configurable worktree base directory via `worktreeBaseDir` in `config.json`.
 
 Artifacts created per run:
 
 - `initial-ramblings.md`
 - `research.md`
 - `plan.md`
+- `plan-review.md`
+- `plan-review-summary.md`
 - `plan-implementation.md`
 - `completed-summary.md`
 - `review.md`
@@ -294,12 +298,15 @@ Config example:
       "default": "openai/gpt-5.1-codex",
       "steps": {
         "plan": "openai/gpt-5.3-codex",
+        "planReview": "openai/gpt-5.1-codex",
         "implement": "openai/gpt-5.3-codex-spark"
       }
     }
   }
 }
 ```
+
+The iterative plan review loop runs after `plan` and before `plan-implementation`. Configure `models.<runner>.steps.planReview` to use a different model for the reviewer.
 
 ## Sources, hooks, and custom config
 
@@ -360,6 +367,28 @@ Example:
       "promptDir": "prompts/work"
     }
   }
+}
+```
+
+### Worktree settings
+
+`worktreeBaseDir` controls where task worktrees are created. It accepts absolute paths, `~/...`, or paths relative to `AUTO_PR_HOME`.
+
+```json
+{
+  "askWorktreeStart": true,
+  "worktreeBaseDir": "~/.cache/auto-pr/worktrees"
+}
+```
+
+### Plan review loop settings
+
+`planReviewLoopEnabled` toggles iterative review and `planReviewMaxRounds` sets the cap before failing the run.
+
+```json
+{
+  "planReviewLoopEnabled": true,
+  "planReviewMaxRounds": 3
 }
 ```
 

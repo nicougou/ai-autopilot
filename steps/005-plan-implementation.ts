@@ -13,7 +13,7 @@ import {
 } from "../utils.js"
 
 /**
- * Step 4 — Create the detailed implementation plan.
+ * Step 5 — Create the detailed implementation plan.
  * Produces plan-implementation.md.
  */
 export async function stepPlanImplementation(ctx: IssueContext): Promise<boolean> {

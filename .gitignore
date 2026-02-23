@@ -2,3 +2,4 @@ node_modules/
 dist/
 config.json
 .*.bun-build
+.DS_Store

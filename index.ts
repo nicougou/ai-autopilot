@@ -1,6 +1,5 @@
 import { parseArgs } from "node:util"
-import { mkdirSync, rmSync } from "node:fs"
-import { homedir } from "node:os"
+import { existsSync, mkdirSync, rmSync } from "node:fs"
 import { join } from "node:path"
 import { resolveSourceInputs } from "./sources/resolve-inputs.js"
 import { runPipeline, STEP_NAMES, type StepName } from "./pipeline.js"
@@ -51,7 +50,7 @@ if (values.help) {
   console.log(`
 ai-autopilot — Automated issue-to-PR pipeline
 
-Runs a multi-step agent pipeline (research → plan → implement → review)
+Runs a multi-step agent pipeline (research → plan → plan-review-loop → plan-implementation → implement → review)
 from explicit source inputs (GitHub issue, markdown file, prompt, Trello URL, Slack URL).
 
 Usage:
@@ -171,10 +170,54 @@ function remapContextRoot(ctx: IssueContext, repoRoot: string): IssueContext {
   }
 }
 
+function contextRunKey(repoShort: string, id: string): string {
+  return `${repoShort}:${id}`
+}
+
+function hasTaskArtifacts(repoRoot: string, repoShort: string, id: string): boolean {
+  const candidateIssueDirsRel = [
+    `.auto-pr/${id}`,
+    `.auto-pr/${repoShort}/${id}`,
+  ]
+  return candidateIssueDirsRel.some((issueDirRel) => existsSync(join(repoRoot, issueDirRel, "initial-ramblings.md")))
+}
+
+function getWorktreesRoot(repoKey: string): string {
+  const cfg = getConfig()
+  return join(cfg.worktreeBaseDir, repoKey)
+}
+
+async function detectExistingWorktreeForTask(id: string, repoShort: string): Promise<string | undefined> {
+  if (hasTaskArtifacts(getRepoRoot(), repoShort, id)) {
+    return undefined
+  }
+
+  const cfg = getConfig()
+  const repoKey = cfg.monorepo.replace(/[^a-zA-Z0-9._-]+/g, "-")
+  const expectedPath = join(getWorktreesRoot(repoKey), `${repoShort}-${id}`)
+  if (hasTaskArtifacts(expectedPath, repoShort, id)) {
+    return expectedPath
+  }
+
+  const raw = await git(["worktree", "list", "--porcelain"]).catch(() => "")
+  if (!raw) return undefined
+
+  for (const line of raw.split("\n")) {
+    if (!line.startsWith("worktree ")) continue
+    const path = line.slice("worktree ".length).trim()
+    if (!path || path === getRepoRoot()) continue
+    if (hasTaskArtifacts(path, repoShort, id)) {
+      return path
+    }
+  }
+
+  return undefined
+}
+
 async function createWorktreeForContext(ctx: IssueContext): Promise<string> {
   const cfg = getConfig()
   const repoKey = cfg.monorepo.replace(/[^a-zA-Z0-9._-]+/g, "-")
-  const worktreesRoot = join(homedir(), ".cache/auto-pr/worktrees", repoKey)
+  const worktreesRoot = getWorktreesRoot(repoKey)
   const worktreePath = join(worktreesRoot, `${ctx.repoShort}-${ctx.id}`)
 
   mkdirSync(worktreesRoot, { recursive: true })
@@ -248,7 +291,7 @@ async function main() {
     : false
   if (useWorktree) {
     const repoKey = cfg.monorepo.replace(/[^a-zA-Z0-9._-]+/g, "-")
-    log(`Worktree mode enabled (base: ${join(homedir(), ".cache/auto-pr/worktrees", repoKey)})`)
+    log(`Worktree mode enabled (base: ${getWorktreesRoot(repoKey)})`)
   }
 
   const defaultRepoShort = cfg.repos[0] ? repoShortName(cfg.repos[0].repo) : undefined
@@ -335,10 +378,22 @@ async function main() {
 
   let contexts: IssueContext[]
   let resolvedFromId = false
+  const contextRunRoots = new Map<string, string>()
   if (typeof values.id === "string" && values.id.trim() && explicitSources.length === 0) {
     const repoShort = (values.repo as string | undefined) ?? defaultRepoShort
     if (!repoShort) throw new Error("--id requires --repo when no repo is configured")
-    contexts = [buildContextFromId(values.id.trim(), repoShort)]
+    const taskId = values.id.trim()
+    const autoDetectedWorktree = values.resume
+      ? await detectExistingWorktreeForTask(taskId, repoShort)
+      : undefined
+    if (autoDetectedWorktree) {
+      log(`Detected existing worktree for ${repoShort}:${taskId}: ${autoDetectedWorktree}`)
+      const ctx = await withRepoRoot(autoDetectedWorktree, async () => buildContextFromId(taskId, repoShort))
+      contextRunRoots.set(contextRunKey(repoShort, taskId), autoDetectedWorktree)
+      contexts = [ctx]
+    } else {
+      contexts = [buildContextFromId(taskId, repoShort)]
+    }
     resolvedFromId = true
   } else {
     if (explicitSources.length === 0) {
@@ -374,7 +429,13 @@ async function main() {
         log(`Using worktree for ${contextRef(ctx)}: ${worktreePath}`)
         await withRepoRoot(worktreePath, () => runPipeline(runCtx, untilStep))
       } else {
-        await runPipeline(ctx, untilStep)
+        const existingWorktree = contextRunRoots.get(contextRunKey(ctx.repoShort, ctx.id))
+        if (existingWorktree) {
+          log(`Resuming in existing worktree for ${contextRef(ctx)}: ${existingWorktree}`)
+          await withRepoRoot(existingWorktree, () => runPipeline(ctx, untilStep))
+        } else {
+          await runPipeline(ctx, untilStep)
+        }
       }
       const usageAfter = getUsageStats()
       const issueCost = usageAfter.totalCostUsd - usageBefore.totalCostUsd

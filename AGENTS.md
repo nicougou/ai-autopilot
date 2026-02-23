@@ -35,12 +35,13 @@ Steps run in order:
 1. `research`
 2. `plan`
 3. `plan-annotations` (only if `plan-annotations.md` exists)
-4. `plan-implementation`
-5. `implement`
-6. `review`
-7. `pr-description` (always runs; writes and prints `pr-description.md`)
-8. `create-pr` (conditional on `prMode`)
-9. `remove-label` (GitHub issue sources only)
+4. `plan-review-loop`
+5. `plan-implementation`
+6. `implement`
+7. `review`
+8. `pr-description` (always runs; writes and prints `pr-description.md`)
+9. `create-pr` (conditional on `prMode`)
+10. `remove-label` (GitHub issue sources only)
 
 Each step must produce its expected artifact in the task folder under `.auto-pr/...`.
 
@@ -77,6 +78,8 @@ Hooks are deep-merged when profiles are applied (per-event, per-step).
 - `initial-ramblings.md` — initial normalized source context
 - `research.md` — codebase investigation
 - `plan.md` — architecture/decision plan
+- `plan-review.md` — latest iterative plan review feedback + verdict
+- `plan-review-summary.md` — rounds run and final verdict
 - `plan-implementation.md` — ordered checkbox checklist
 - `completed-summary.md` — completion signal from implement loop
 - `review.md` — PASS/PASS WITH FIXES summary
@@ -118,7 +121,7 @@ Logs show selected model per step and whether it came from `step` or `default`.
 ## Worktree Mode
 
 - Optional and interactive (`--ask-worktree` or config).
-- Worktrees are created under `~/.cache/auto-pr/worktrees/<repo-key>/...`.
+- Worktrees are created under `<worktreeBaseDir>/<repo-key>/...` (default: `~/.cache/auto-pr/worktrees`).
 - Use for isolation when main repo is dirty or multiple tasks run.
 
 ## Safety and Constraints

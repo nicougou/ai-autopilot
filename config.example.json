@@ -7,6 +7,7 @@
         "research": "sonnet",
         "plan": "opus",
         "planAnnotations": "opus",
+        "planReview": "sonnet",
         "planImplementation": "opus",
         "implement": "sonnet",
         "prDescription": "opus",
@@ -21,6 +22,7 @@
         "research": "openai/gpt-5.1-codex",
         "plan": "openai/gpt-5.3-codex",
         "planAnnotations": "opencode/glm-5",
+        "planReview": "openai/gpt-5.1-codex",
         "planImplementation": "openai/gpt-5.3-codex",
         "implement": "openai/gpt-5.3-codex-spark",
         "prDescription": "openai/gpt-5.3-codex",
@@ -34,6 +36,9 @@
     "onNeedInput": "osascript -e 'display notification \"ai-autopilot needs your input\" with title \"ai-autopilot\" sound name \"Glass\"'"
   },
   "askWorktreeStart": true,
+  "worktreeBaseDir": "~/.cache/auto-pr/worktrees",
+  "planReviewLoopEnabled": true,
+  "planReviewMaxRounds": 3,
   "prMode": "ask",
   "triggerLabel": "ai-autopilot",
   "sourceCommands": {

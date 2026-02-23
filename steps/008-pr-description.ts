@@ -15,7 +15,7 @@ import {
 } from "../utils.js"
 
 /**
- * Step 7 — Generate and print PR description.
+ * Step 8 — Generate and print PR description.
  * Always runs to keep pr-description.md in sync with current HEAD.
  */
 export async function stepPrDescription(ctx: IssueContext): Promise<boolean> {

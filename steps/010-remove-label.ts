@@ -7,7 +7,7 @@ import {
 } from "../utils.js"
 
 /**
- * Step 9 — Remove the trigger label from the issue.
+ * Step 10 — Remove the trigger label from the issue.
  * Prevents the issue from being picked up again in future pipeline runs.
  * Idempotent — safe to run even if the label is already removed.
  */

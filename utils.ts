@@ -15,10 +15,11 @@ export const PROMPT_TEMPLATES = {
   research: "001-research.md",
   plan: "002-plan.md",
   planAnnotations: "003-plan-annotations.md",
-  planImplementation: "004-plan-implementation.md",
-  implement: "005-implement.md",
-  review: "006-review.md",
-  prDescription: "007-pr-description.md",
+  planReview: "004-plan-review.md",
+  planImplementation: "005-plan-implementation.md",
+  implement: "006-implement.md",
+  review: "007-review.md",
+  prDescription: "008-pr-description.md",
   refresh: "900-refresh.md",
   reviewRound: "910-review-round.md",
 } as const
@@ -76,6 +77,12 @@ export interface Config {
   models?: Partial<Record<AgentRunner, RunnerModelConfig>>
   /** Ask once at startup whether to run in git worktrees */
   askWorktreeStart?: boolean
+  /** Base directory for created git worktrees (absolute or relative to AUTO_PR_HOME) */
+  worktreeBaseDir?: string
+  /** Whether to run iterative plan review loop before implementation planning */
+  planReviewLoopEnabled?: boolean
+  /** Max rounds for iterative plan review loop */
+  planReviewMaxRounds?: number
   /** Issue label that triggers the pipeline */
   triggerLabel?: string
   /** Optional external commands for source resolution */
@@ -119,6 +126,9 @@ export interface ResolvedConfig {
   askBeforeImplement: boolean
   models: ModelsConfig
   askWorktreeStart: boolean
+  worktreeBaseDir: string
+  planReviewLoopEnabled: boolean
+  planReviewMaxRounds: number
   triggerLabel: string
   sourceCommands: Partial<Record<"github" | "trello" | "slack", string>>
   repos: RepoConfig[]
@@ -160,6 +170,13 @@ function resolveAutoPrHome(preferredHome?: string): string {
   if (existsSync(join(renamedHome, "config.json"))) return renamedHome
   if (existsSync(join(legacyHome, "config.json"))) return legacyHome
   return renamedHome
+}
+
+function resolveWorktreeBaseDir(baseDir?: string): string {
+  if (!baseDir) return join(homedir(), ".cache/auto-pr/worktrees")
+  if (baseDir === "~") return homedir()
+  if (baseDir.startsWith("~/")) return join(homedir(), baseDir.slice(2))
+  return resolve(AUTO_PR_HOME, baseDir)
 }
 
 function loadUserConfig(): UserConfig {
@@ -314,6 +331,9 @@ export async function initConfig(opts?: { homeDir?: string; profile?: string }):
     askBeforeImplement: merged.askBeforeImplement ?? false,
     models: resolveModels(merged.models),
     askWorktreeStart: merged.askWorktreeStart ?? false,
+    worktreeBaseDir: resolveWorktreeBaseDir(merged.worktreeBaseDir),
+    planReviewLoopEnabled: merged.planReviewLoopEnabled ?? true,
+    planReviewMaxRounds: Math.max(1, merged.planReviewMaxRounds ?? 3),
     triggerLabel: merged.triggerLabel ?? "ai-autopilot",
     sourceCommands: merged.sourceCommands ?? {},
     repos,

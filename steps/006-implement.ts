@@ -18,7 +18,7 @@ import {
 } from "../utils.js";
 
 /**
- * Step 5 — Implement the code changes.
+ * Step 6 — Implement the code changes.
  * Loops Claude with acceptEdits until completed-summary.md is created
  * (meaning all plan-implementation.md checkboxes are checked).
  */

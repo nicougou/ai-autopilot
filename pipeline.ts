@@ -3,17 +3,19 @@ import { contextRef, type IssueContext, ensureDir, fileExists, getConfig, git, l
 import { stepResearch } from "./steps/001-research.js"
 import { stepPlan } from "./steps/002-plan.js"
 import { stepPlanAnnotations } from "./steps/003-plan-annotations.js"
-import { stepPlanImplementation } from "./steps/004-plan-implementation.js"
-import { stepImplement } from "./steps/005-implement.js"
-import { stepReview } from "./steps/006-review.js"
-import { stepPrDescription } from "./steps/007-pr-description.js"
-import { stepCreatePR } from "./steps/008-create-pr.js"
-import { stepRemoveLabel } from "./steps/009-remove-label.js"
+import { stepPlanReviewLoop } from "./steps/004-plan-review-loop.js"
+import { stepPlanImplementation } from "./steps/005-plan-implementation.js"
+import { stepImplement } from "./steps/006-implement.js"
+import { stepReview } from "./steps/007-review.js"
+import { stepPrDescription } from "./steps/008-pr-description.js"
+import { stepCreatePR } from "./steps/009-create-pr.js"
+import { stepRemoveLabel } from "./steps/010-remove-label.js"
 
 const STEPS = [
   { name: "research", run: stepResearch },
   { name: "plan", run: stepPlan },
   { name: "plan-annotations", run: stepPlanAnnotations },
+  { name: "plan-review-loop", run: stepPlanReviewLoop },
   { name: "plan-implementation", run: stepPlanImplementation },
   { name: "implement", run: stepImplement },
   { name: "review", run: stepReview },

@@ -13,7 +13,7 @@ import {
 } from "../utils.js"
 
 /**
- * Step 6 — Self-review the implementation.
+ * Step 7 — Self-review the implementation.
  * Checks for common mistakes and produces review.md.
  */
 export async function stepReview(ctx: IssueContext): Promise<boolean> {
